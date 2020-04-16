@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 
 """ house_prices.py Predict house prices in Ames, Ohio"""
-
-__author__ = "David J. Vine"
-__email__ = "djvine@gmail.com"
-
-
 import pandas as pd
 import numpy as np
 import numpy.linalg as npl
 import sklearn.ensemble as se
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
-from sklearn.grid_search import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 import operator
-import ipdb
+
 
 def fix_missing_data(df):
     # Row 2120 is missing all basement data
@@ -35,7 +30,7 @@ def fix_missing_data(df):
 
 
 def main():
-    
+
     train_df = pd.read_csv('./train.csv', header=0)
     test_df = pd.read_csv('./test.csv', header=0)
     df = pd.concat([train_df, test_df])
@@ -350,7 +345,7 @@ def main():
         mat_y = np.matrix(y.values)
         theta = np.dot(npl.pinv(np.dot(np.transpose(mat_x), mat_x)), np.dot(np.transpose(mat_x), np.transpose(mat_y)))
         # check
-        ipdb.set_trace()
+        # ipdb.set_trace()
         print(np.sum(np.abs(np.array(np.dot(np.transpose(theta), np.transpose(mat_x))-np.transpose(mat_y)))**2))
         print(np.sum(np.abs(np.array(np.dot(mat_x, theta)-np.transpose(mat_y)))**2))
         output = pd.DataFrame()
@@ -402,16 +397,17 @@ def main():
                      seed=10483,
                      silent=1)
 
-        #grid_search = GridSearchCV(estimator = regr_test, param_grid=grid_test, n_jobs=-1, cv=10)
-        #grid_search.fit(X, y)
-        #best_params = report(grid_search.grid_scores_)
+        grid_search = GridSearchCV(estimator = regr_test, param_grid=grid_test, n_jobs=-1, cv=10)
+        grid_search.fit(X, y)
+        best_params = report(grid_search.grid_scores_)
+        print(grid_search.grid_scores_)
 
         regr.fit(X, y)
         print('XGB on test data: {:2.3f}'.format(100.0*mean_squared_error(y.values, regr.predict(X))))
 
         # Prune unimportance features
         if False:
-            ipdb.set_trace()
+            # ipdb.set_trace()
             _feature_importance = regr.feature_importances_
             _feature_importance *= 100.0/_feature_importance.max()
             importance_threshhold = 15.0
@@ -436,8 +432,6 @@ def main():
             print('Pruned XGB on test data: {:2.3f}'.format(100.0*mean_squared_error(y.values, regr.predict(X))))
 
 
-        
-
         yhat_xgboost = regr.predict(Xhat)
         output = pd.DataFrame()
         output['Id'] = test_df['Id']
@@ -448,12 +442,13 @@ def main():
         from sklearn.linear_model import Lasso
 
         best_alpha = 0.0005
-        #params = { 'alpha': np.linspace(0.00001, 0.1, 10000)}
-        #regr = Lasso(max_iter=50000)
-        #grid_search = GridSearchCV(estimator = regr, param_grid=params, n_jobs=-1, cv=10)
-        #grid_search.fit(X, y)
-        #best_params = report(grid_search.grid_scores_)
-
+        params = { 'alpha': np.linspace(0.00001, 0.1, 10000)}
+        regr = Lasso(max_iter=50000)
+        grid_search = GridSearchCV(estimator = regr, param_grid=params, n_jobs=-1, cv=10)
+        grid_search.fit(X, y)
+        best_params = report(grid_search.grid_scores_)
+        print(grid_search.grid_scores_)
+        
         regr = Lasso(alpha=best_alpha, max_iter=50000)
         regr.fit(X, y)
         print('Lasso on test data: {:2.3f}'.format(100.0*mean_squared_error(y.values, regr.predict(X))))
